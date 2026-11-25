@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Lista de editores: documento config/acceso con un campo "editores" (array de correos).
+    // Se edita solo desde la consola de Firebase.
+    function esEditor() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower()
+           in get(/databases/$(database)/documents/config/acceso).data.editores;
+    }
+
+    function eventoValido() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['title', 'date', 'time', 'note', 'anim', 'countdown', 'createdAt', 'start'])
+        && d.keys().hasAll(['title', 'date', 'anim', 'countdown'])
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 80
+        && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && (!('time' in d) || (d.time is string && d.time.matches('^([0-9]{2}:[0-9]{2})?$')))
+        && (!('note' in d) || (d.note is string && d.note.size() <= 300))
+        && d.anim in ['confeti', 'fuegos', 'corazones', 'globos', 'estrellas']
+        && d.countdown is bool
+        && (!('createdAt' in d) || d.createdAt is number)
+        && (!('start' in d) || (d.start is string && d.start.matches('^([0-9]{4}-[0-9]{2}-[0-9]{2})?$')));
+    }
+
+    match /config/acceso {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /eventos/{id} {
+      // Cualquiera con el enlace puede ver el calendario.
+      // Para que solo personas con sesión iniciada lo vean, cambia a: if request.auth != null;
+      allow read: if true;
+      allow create, update: if esEditor() && eventoValido();
+      allow delete: if esEditor();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
