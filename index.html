@@ -182,6 +182,7 @@ body.month-mode header,body.month-mode main{max-width:1040px}
 body.month-mode .countdowns{display:none}
 /* Modo hoja: el calendario se centra en vertical en la pantalla */
 body:not(.month-mode){height:auto;min-height:100%;display:flex;flex-direction:column}
+body:not(.month-mode) header{width:100%} /* en columna flex, el margen auto haria que el encabezado no ocupe el ancho */
 body:not(.month-mode) main{flex:1;display:flex;flex-direction:column;width:100%}
 body:not(.month-mode) #sheetView{flex:1;display:flex;flex-direction:column;justify-content:center}
 .mv-head{display:flex;align-items:center;gap:10px;margin:4px 0 14px}
@@ -290,11 +291,12 @@ body:not(.month-mode) #sheetView{flex:1;display:flex;flex-direction:column;justi
 
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
 .toast{
-  position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);
+  position:fixed;left:0;right:0;margin:0 auto;width:fit-content;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateY(20px);
   background:var(--ink);color:var(--paper);padding:11px 16px;border-radius:14px;font-size:.9rem;z-index:40;
   opacity:0;transition:.25s;pointer-events:none;max-width:calc(100% - 36px);text-align:center;
 }
-.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.show{opacity:1;transform:none}
+.toast.gcal{background:#1A73E8;color:#fff;font-weight:500;box-shadow:0 10px 24px -12px rgba(26,115,232,.8)}
 [hidden]{display:none !important}
 
 @media (prefers-reduced-motion: reduce){
@@ -977,12 +979,17 @@ function pedirTokenCalendar(clientId){
   });
 }
 
+// Google exige ids con caracteres a-v y 0-9. Usamos "h" + hex del id de la app,
+// que siempre cumple y es el mismo en cualquier dispositivo.
+const gcalIdDe = id => "h" + [...String(id)].map(c => c.charCodeAt(0).toString(16).padStart(2,"0")).join("");
+
 // Fechas y horas en formato de Google Calendar. Sin hora = día completo.
 // Cuenta regresiva = día completo en la fecha objetivo (e.date).
 function construirEventoGoogle(e){
   const emo = ANIM_EMOJI[e.anim] || "";
   const body = {
-    summary: e.countdown ? "⭐ Cuenta: " + e.title : emo + " " + e.title,
+    id: gcalIdDe(e.id), // mismo id siempre: Google rechaza duplicados (409)
+    summary: e.countdown ? "⭐ " + e.title : emo + " " + e.title,
     description: e.note || "Creado desde Calendario de hojas",
   };
   if(e.time){
@@ -1001,10 +1008,11 @@ function construirEventoGoogle(e){
 
 async function agregarAGoogleCalendar(e){
   const btn = $("eGcal"); btn.disabled = true;
+  const gtoast = m => toast(m, "gcal"); // avisos de Google en color propio
   try{
     const { googleClientId } = await import("./firebase-config.js");
     if(!googleClientId || googleClientId.startsWith("TU_")){
-      toast("Falta configurar el Client ID de Google en firebase-config.js"); return;
+      gtoast("Falta configurar el Client ID de Google en firebase-config.js"); return;
     }
     await loadGis();
     const token = (gcalToken && Date.now() < gcalExp) ? gcalToken : await pedirTokenCalendar(googleClientId);
@@ -1013,14 +1021,32 @@ async function agregarAGoogleCalendar(e){
       headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
       body: JSON.stringify(construirEventoGoogle(e))
     });
-    if(r.status === 401){ gcalToken = null; toast("Vuelve a tocar el botón para autorizar"); return; }
+    if(r.status === 401){ gcalToken = null; gtoast("Vuelve a tocar el botón para autorizar"); return; }
+    if(r.status === 409){
+      // Google conserva el ID de un evento borrado: si está activo ya existe;
+      // si está cancelado (borrado), lo restauramos con los datos actuales.
+      const url = "https://www.googleapis.com/calendar/v3/calendars/primary/events/" + gcalIdDe(e.id);
+      const auth = { "Authorization": "Bearer " + token };
+      const g = await fetch(url, { headers: auth });
+      const actual = g.ok ? await g.json() : null;
+      if(actual && actual.status !== "cancelled"){ gtoast("Ya está en tu Google Calendar"); return; }
+      const { id, ...datos } = construirEventoGoogle(e);
+      const rp = await fetch(url, {
+        method: "PATCH",
+        headers: { ...auth, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...datos, status: "confirmed" })
+      });
+      if(!rp.ok) throw new Error("HTTP " + rp.status);
+      gtoast("Agregado de nuevo a tu Google Calendar");
+      return;
+    }
     if(!r.ok) throw new Error("HTTP " + r.status);
-    toast("Agregado a tu Google Calendar");
+    gtoast("Agregado a tu Google Calendar");
   }catch(err){
     const m = err && err.message || "";
-    if(m === "popup_failed_to_open") toast("Permite ventanas emergentes y vuelve a intentar");
-    else if(m === "popup_closed" || m === "access_denied") toast("No se dio permiso para Google Calendar");
-    else toast("No se pudo agregar al calendario. Inténtalo de nuevo");
+    if(m === "popup_failed_to_open") gtoast("Permite ventanas emergentes y vuelve a intentar");
+    else if(m === "popup_closed" || m === "access_denied") gtoast("No se dio permiso para Google Calendar");
+    else gtoast("No se pudo agregar al calendario. Inténtalo de nuevo");
   }finally{ btn.disabled = false; }
 }
 $("eGcal").addEventListener("click",()=>{ if(editing) agregarAGoogleCalendar(editing); });
@@ -1313,7 +1339,7 @@ syncSoundBtn();
 
 /* ---------- Toast ---------- */
 let toastT = null;
-function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2800); }
+function toast(msg, tone){ const t=$("toast"); t.textContent=msg; t.classList.toggle("gcal", tone==="gcal"); t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2800); }
 
 /* ---------- Day rollover ---------- */
 let lastToday = keyOf(today());
