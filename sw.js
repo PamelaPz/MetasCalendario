@@ -1,6 +1,6 @@
 // Service worker: hace que la app abra sin internet.
 // Cuando publiques cambios, sube el número de VERSION para que los celulares descarguen la nueva versión.
-const VERSION = "hojas-v1";
+const VERSION = "hojas-v2";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest", "./firebase-config.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"

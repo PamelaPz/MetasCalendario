@@ -9,3 +9,7 @@ export const firebaseConfig = {
   appId: "1:4733608111:web:45f3937dd7380a3ec3f45a",
   measurementId: "G-50N0NTDQTB"
 };
+
+// Client ID de OAuth (tipo "Aplicación web") para agregar eventos a Google Calendar.
+// No es secreto. Ver README, sección "Google Calendar".
+export const googleClientId = "4733608111-ieoae7uqea9lb6vpair5u30anda19jq5.apps.googleusercontent.com";

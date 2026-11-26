@@ -49,6 +49,18 @@ Para dar o quitar permiso de edición más adelante, solo cambia esa lista. No h
 - **Android (Chrome):** menú ⋮ > **Instalar app** o **Agregar a pantalla de inicio**.
 - **iPhone (Safari):** botón Compartir > **Agregar a inicio**.
 
+## 6. Google Calendar (opcional)
+
+Permite agregar un evento a tu Google Calendar personal con el botón **Agregar a Google Calendar** del panel de cada evento.
+
+1. En https://console.cloud.google.com, usa el mismo proyecto de Firebase (o crea uno) y activa **Google Calendar API**.
+2. **APIs y servicios > Pantalla de consentimiento de OAuth**: tipo **Externo**, modo **Testing**, y agrega tu correo en **Usuarios de prueba**.
+3. **Credenciales > Crear credenciales > ID de cliente de OAuth**: tipo **Aplicación web**.
+   - Orígenes de JavaScript autorizados: `https://TU_USUARIO.github.io` (y `http://localhost:PUERTO` si pruebas en tu computadora).
+4. Copia el Client ID en `firebase-config.js` (`googleClientId`).
+
+Al primer uso, Google pide permiso para ver y editar eventos de tu calendario. En modo Testing, Google puede pedir volver a autorizar después de un tiempo.
+
 ## Quién puede hacer qué
 
 - **Ver:** cualquiera con el enlace, sin iniciar sesión. Para hacerlo privado, en `firestore.rules`
