@@ -989,7 +989,7 @@ function construirEventoGoogle(e){
   const emo = ANIM_EMOJI[e.anim] || "";
   const body = {
     id: gcalIdDe(e.id), // mismo id siempre: Google rechaza duplicados (409)
-    summary: e.countdown ? "⭐ Cuenta: " + e.title : emo + " " + e.title,
+    summary: e.countdown ? "⭐ " + e.title : emo + " " + e.title,
     description: e.note || "Creado desde Calendario de hojas",
   };
   if(e.time){
