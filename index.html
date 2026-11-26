@@ -1022,7 +1022,24 @@ async function agregarAGoogleCalendar(e){
       body: JSON.stringify(construirEventoGoogle(e))
     });
     if(r.status === 401){ gcalToken = null; gtoast("Vuelve a tocar el botón para autorizar"); return; }
-    if(r.status === 409){ gtoast("Ya está en tu Google Calendar"); return; }
+    if(r.status === 409){
+      // Google conserva el ID de un evento borrado: si está activo ya existe;
+      // si está cancelado (borrado), lo restauramos con los datos actuales.
+      const url = "https://www.googleapis.com/calendar/v3/calendars/primary/events/" + gcalIdDe(e.id);
+      const auth = { "Authorization": "Bearer " + token };
+      const g = await fetch(url, { headers: auth });
+      const actual = g.ok ? await g.json() : null;
+      if(actual && actual.status !== "cancelled"){ gtoast("Ya está en tu Google Calendar"); return; }
+      const { id, ...datos } = construirEventoGoogle(e);
+      const rp = await fetch(url, {
+        method: "PATCH",
+        headers: { ...auth, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...datos, status: "confirmed" })
+      });
+      if(!rp.ok) throw new Error("HTTP " + rp.status);
+      gtoast("Agregado de nuevo a tu Google Calendar");
+      return;
+    }
     if(!r.ok) throw new Error("HTTP " + r.status);
     gtoast("Agregado a tu Google Calendar");
   }catch(err){
