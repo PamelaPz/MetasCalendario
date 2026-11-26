@@ -977,11 +977,16 @@ function pedirTokenCalendar(clientId){
   });
 }
 
+// Google exige ids con caracteres a-v y 0-9. Usamos "h" + hex del id de la app,
+// que siempre cumple y es el mismo en cualquier dispositivo.
+const gcalIdDe = id => "h" + [...String(id)].map(c => c.charCodeAt(0).toString(16).padStart(2,"0")).join("");
+
 // Fechas y horas en formato de Google Calendar. Sin hora = día completo.
 // Cuenta regresiva = día completo en la fecha objetivo (e.date).
 function construirEventoGoogle(e){
   const emo = ANIM_EMOJI[e.anim] || "";
   const body = {
+    id: gcalIdDe(e.id), // mismo id siempre: Google rechaza duplicados (409)
     summary: e.countdown ? "⭐ Cuenta: " + e.title : emo + " " + e.title,
     description: e.note || "Creado desde Calendario de hojas",
   };
@@ -1014,6 +1019,7 @@ async function agregarAGoogleCalendar(e){
       body: JSON.stringify(construirEventoGoogle(e))
     });
     if(r.status === 401){ gcalToken = null; toast("Vuelve a tocar el botón para autorizar"); return; }
+    if(r.status === 409){ toast("Ya está en tu Google Calendar"); return; }
     if(!r.ok) throw new Error("HTTP " + r.status);
     toast("Agregado a tu Google Calendar");
   }catch(err){
