@@ -180,7 +180,10 @@ main{max-width:480px;margin:0 auto;padding:0 18px 40px}
 .panel-head h3{margin:0;font-size:1.1rem;font-weight:600}
 body.month-mode header,body.month-mode main{max-width:1040px}
 body.month-mode .countdowns{display:none}
-.mv-head{display:flex;align-items:center;gap:10px;margin:4px 0 14px}
+/* Modo hoja: el calendario se centra en vertical en la pantalla */
+body:not(.month-mode){height:auto;min-height:100%;display:flex;flex-direction:column}
+body:not(.month-mode) main{flex:1;display:flex;flex-direction:column;width:100%}
+body:not(.month-mode) #sheetView{flex:1;display:flex;flex-direction:column;justify-content:center}.mv-head{display:flex;align-items:center;gap:10px;margin:4px 0 14px}
 .mv-head h2{flex:1;margin:0;font-size:1.45rem;font-weight:600;letter-spacing:-.02em}
 .grid{
   display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--paper);
