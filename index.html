@@ -266,9 +266,16 @@ body:not(.month-mode) #sheetView{flex:1;display:flex;flex-direction:column;justi
   background:var(--paper);padding-top:12px;margin-top:4px;border-top:1px solid var(--line);
 }
 .edit-actions.ro{grid-template-columns:1fr}
-.gcal-row{margin:-6px 0 14px}
-.gcal-row .link-btn svg{width:18px;height:18px}
-.link-btn:disabled{opacity:.5}
+.gcal-row{margin:4px 0 16px}
+.gcal-btn{
+  width:100%;min-height:50px;display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--paper-2);border:1px solid var(--line);border-radius:14px;
+  font-size:.98rem;font-weight:500;color:var(--ink);transition:background .15s,transform .1s;
+}
+.gcal-btn:hover{background:var(--line)}
+.gcal-btn:active{transform:scale(.98)}
+.gcal-btn:disabled{opacity:.55;cursor:default}
+.gcal-btn svg{width:20px;height:20px;flex:none;color:var(--accent)}
 .edit-actions .btn{min-height:48px;font-size:.98rem}
 .icon-btn.danger-ghost{color:var(--accent);background:none;border-color:transparent;margin-right:-8px}
 .icon-btn.danger-ghost:hover{background:var(--paper-2)}
@@ -416,7 +423,7 @@ body:not(.month-mode) #sheetView{flex:1;display:flex;flex-direction:column;justi
       <div class="anims" id="fAnims"></div>
     </div>
     <div class="gcal-row" id="gcalRow" hidden>
-      <button type="button" class="link-btn" id="eGcal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M12 12.5v4M10 14.5h4"/></svg>Agregar a Google Calendar</button>
+      <button type="button" class="gcal-btn" id="eGcal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M12 12.5v4M10 14.5h4"/></svg>Agregar a Google Calendar</button>
     </div>
     <div class="edit-actions" id="eActions">
       <button class="btn" id="eCancel">Cancelar</button>
