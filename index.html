@@ -295,6 +295,7 @@ body:not(.month-mode) #sheetView{flex:1;display:flex;flex-direction:column;justi
   opacity:0;transition:.25s;pointer-events:none;max-width:calc(100% - 36px);text-align:center;
 }
 .toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.gcal{background:#1A73E8;color:#fff;font-weight:500;box-shadow:0 10px 24px -12px rgba(26,115,232,.8)}
 [hidden]{display:none !important}
 
 @media (prefers-reduced-motion: reduce){
@@ -1006,10 +1007,11 @@ function construirEventoGoogle(e){
 
 async function agregarAGoogleCalendar(e){
   const btn = $("eGcal"); btn.disabled = true;
+  const gtoast = m => toast(m, "gcal"); // avisos de Google en color propio
   try{
     const { googleClientId } = await import("./firebase-config.js");
     if(!googleClientId || googleClientId.startsWith("TU_")){
-      toast("Falta configurar el Client ID de Google en firebase-config.js"); return;
+      gtoast("Falta configurar el Client ID de Google en firebase-config.js"); return;
     }
     await loadGis();
     const token = (gcalToken && Date.now() < gcalExp) ? gcalToken : await pedirTokenCalendar(googleClientId);
@@ -1018,15 +1020,15 @@ async function agregarAGoogleCalendar(e){
       headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
       body: JSON.stringify(construirEventoGoogle(e))
     });
-    if(r.status === 401){ gcalToken = null; toast("Vuelve a tocar el botón para autorizar"); return; }
-    if(r.status === 409){ toast("Ya está en tu Google Calendar"); return; }
+    if(r.status === 401){ gcalToken = null; gtoast("Vuelve a tocar el botón para autorizar"); return; }
+    if(r.status === 409){ gtoast("Ya está en tu Google Calendar"); return; }
     if(!r.ok) throw new Error("HTTP " + r.status);
-    toast("Agregado a tu Google Calendar");
+    gtoast("Agregado a tu Google Calendar");
   }catch(err){
     const m = err && err.message || "";
-    if(m === "popup_failed_to_open") toast("Permite ventanas emergentes y vuelve a intentar");
-    else if(m === "popup_closed" || m === "access_denied") toast("No se dio permiso para Google Calendar");
-    else toast("No se pudo agregar al calendario. Inténtalo de nuevo");
+    if(m === "popup_failed_to_open") gtoast("Permite ventanas emergentes y vuelve a intentar");
+    else if(m === "popup_closed" || m === "access_denied") gtoast("No se dio permiso para Google Calendar");
+    else gtoast("No se pudo agregar al calendario. Inténtalo de nuevo");
   }finally{ btn.disabled = false; }
 }
 $("eGcal").addEventListener("click",()=>{ if(editing) agregarAGoogleCalendar(editing); });
@@ -1319,7 +1321,7 @@ syncSoundBtn();
 
 /* ---------- Toast ---------- */
 let toastT = null;
-function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2800); }
+function toast(msg, tone){ const t=$("toast"); t.textContent=msg; t.classList.toggle("gcal", tone==="gcal"); t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2800); }
 
 /* ---------- Day rollover ---------- */
 let lastToday = keyOf(today());
